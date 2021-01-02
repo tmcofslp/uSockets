@@ -1,24 +1,35 @@
 # WITH_OPENSSL=1 enables OpenSSL 1.1+ support or BoringSSL
 # For now we need to link with C++ for OpenSSL support, but should be removed with time
-ifeq ($(WITH_OPENSSL),1)
-	override CFLAGS += -DLIBUS_USE_OPENSSL
-	# With problems on macOS, make sure to pass needed LDFLAGS required to find these
-	override LDFLAGS += -lssl -lcrypto -lstdc++
+
+#ifeq ($WITH_WOLFSSL_PATH
+ifdef $WITH_WOLFSSL_SRCPATH
+	override CFLAGS += -DLIBUS_USE_WOLFSSL -I$(WITH_WOLFSSL_SRCPATH)/wolfssl
+	override LDFLAGS += $(WITH_WOLFSSL_SRCPATH)/src/.libs/libwolfssl.a
 else
-	# WITH_WOLFSSL=1 enables WolfSSL 4.2.0 support (mutually exclusive with OpenSSL)
-	ifeq ($(WITH_WOLFSSL),1)
-		# todo: change these
-		override CFLAGS += -DLIBUS_USE_WOLFSSL -I/usr/local/include
-		override LDFLAGS += -L/usr/local/lib -lwolfssl
+	ifeq ($(WITH_OPENSSL),1)
+		override CFLAGS += -DLIBUS_USE_OPENSSL
+		# With problems on macOS, make sure to pass needed LDFLAGS required to find these
+		override LDFLAGS += -lssl -lcrypto -lstdc++
 	else
-		override CFLAGS += -DLIBUS_NO_SSL
+		# WITH_WOLFSSL=1 enables WolfSSL 4.2.0 support (mutually exclusive with OpenSSL)
+		ifeq ($(WITH_WOLFSSL),1)
+			# todo: change these
+			override CFLAGS += -DLIBUS_USE_WOLFSSL -I/usr/local/include
+			override LDFLAGS += -L/usr/local/lib -lwolfssl
+		else
+			override CFLAGS += -DLIBUS_NO_SSL
+		endif
 	endif
 endif
-
-# WITH_LIBUV=1 builds with libuv as event-loop
-ifeq ($(WITH_LIBUV),1)
-	override CFLAGS += -DLIBUS_USE_LIBUV
-	override LDFLAGS += -luv
+ifdef WITH_LIBUV_SRCPATH
+	override CFLAGS += -DLIBUS_USE_LIBUV -I$(WITH_LIBUV_SRCPATH)/include
+	override LDFLAGS += $(WITH_LIBUV_SRCPATH)/.libs/libuv.a
+else
+	# WITH_LIBUV=1 builds with libuv as event-loop
+	ifeq ($(WITH_LIBUV),1)
+		override CFLAGS += -DLIBUS_USE_LIBUV
+		override LDFLAGS += -luv
+	endif
 endif
 
 # WITH_GCD=1 builds with libdispatch as event-loop
